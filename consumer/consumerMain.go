@@ -9,10 +9,7 @@ import (
 	"os"
 	"strings"
 	"time"
-	// "reflect"
-	//"strconv"
 	"github.com/segmentio/kafka-go"
-	// "github.com/xuri/excelize/v2"
 )
 
 const (
@@ -44,21 +41,15 @@ func main(){
 	bootstrapServers := strings.Split(GetEnv(BootstrapServers, "localhost:9092"), ",")
 	topic := GetEnv(Topic, "stackoverflow")
 	groupID := GetEnv(GroupID, "onlyme1")
-	var path = "ImportantLinks.xlsx"
-	// f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE, os.ModeAppend)
-	f, err := os.Create(path)
-	// f, err := excelize.OpenFile(path)
-	// f:= excelize.NewFile()
+	var path = "/home/tanisha/Desktop/Projects/kafka-go-streaming/ImportantLinks.csv"
+	
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_WRONLY, 0644)
 	if err != nil{
 		fmt.Println("Error opening file: ", err)
 	}
 	defer f.Close()
 	writercsv := csv.NewWriter(f)
     defer writercsv.Flush()
-	// if err := writercsv.Error(); err != nil {
-	// 	fmt.Println(err)
-	// }
-	// file := excelize.NewFile()
 
 	config := kafka.ReaderConfig{
 		Brokers:  bootstrapServers,
@@ -77,13 +68,6 @@ func main(){
 		}
 		fmt.Println("Consumer closed")
 	}()
-	var records [][]string
-	// defer func() {
-	// 	if err := f.SaveAs(path); err != nil {
-	// 		log.Fatal(err)
-	// 	}
-	// }()
-	// i := 1
 	for {
 		
 		msg, err := r.ReadMessage(ctx)
@@ -95,18 +79,11 @@ func main(){
 		if err != nil {
 			fmt.Println(err)
 		}
-		// var record []string
-        // record = append(record, d.Link)
-        // record = append(record, d.Description)
-        // record = append(record, d.Topic)
 		record := []string{d.Link, d.Description, d.Topic}
-		// records = append(records, record)
-		// f.SetCellValue("Sheet1",strconv.Itoa(i),record)
-		// i++
-		if err := writercsv.Write(record); err != nil {
-			log.Fatalln("error writing record to file", err)
+		if _, err := f.WriteString(d.Link +string(',')+d.Description+string(',')+d.Topic+string('\n')); err != nil {
+			log.Fatal(err)
 		}
-		fmt.Println(records)
+		fmt.Println(record)
 		fmt.Println("received: ", string(msg.Value))
 	}
 	
